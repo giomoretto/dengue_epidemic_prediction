@@ -1,0 +1,6 @@
+mlruns/
+mlflow.db
+data/
+__pycache__/
+dengue_case_study.egg-info/
+
