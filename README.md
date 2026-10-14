@@ -1,5 +1,14 @@
 # Dengue epidemic prediction
 
+[![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.9-F7931E?logo=scikitlearn&logoColor=white)](https://scikit-learn.org)
+[![XGBoost](https://img.shields.io/badge/XGBoost-3.3-189FDD)](https://xgboost.ai)
+[![Optuna](https://img.shields.io/badge/Optuna-4.9-6A5ACD)](https://optuna.org)
+[![MLflow](https://img.shields.io/badge/MLflow-3.14-0194E2?logo=mlflow&logoColor=white)](https://mlflow.org)
+[![pandas](https://img.shields.io/badge/pandas-2.3-150458?logo=pandas&logoColor=white)](https://pandas.pydata.org)
+[![NumPy](https://img.shields.io/badge/NumPy-2.5-013243?logo=numpy&logoColor=white)](https://numpy.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Probabilistic forecasts of weekly dengue incidence in four Brazilian state capitals. A
 machine-learning model of the epidemic's week-to-week growth is trained with automated
 backtesting and hyperparameter search, and Monte-Carlo simulation over weather scenarios and
@@ -62,49 +71,55 @@ $\mathbf{w}_{c,t} \in \mathbb{R}^6$ the weekly weather and $s_t \in \lbrace 1, \
 the week of the year. The model predicts the weekly change of the log incidence (the epidemic's
 growth rate) from the current state, $L$ lagged weeks and the weather:
 
-$$
+```math
 x_{c,t+1} = x_{c,t} + f\big(s_t,\ c,\ x_{c,t}, \dots, x_{c,t-L},\ \mathbf{w}_{c,t+1}, \mathbf{w}_{c,t}, \dots, \mathbf{w}_{c,t-L}\big) + \varepsilon_{c,t+1}
-$$
+```
 
 Predicting the change instead of the level builds persistence into the model ($f \equiv 0$) and
 lets tree ensembles, which cannot extrapolate, forecast epidemics larger than any in their training
 data. $f$ is a random forest of $B$ regression trees $T_b$,
 
-$$
+```math
 \hat f(\mathbf{z}) = \frac{1}{B} \sum_{b=1}^{B} T_b(\mathbf{z}),
-$$
+```
 
 trained on the targets $\Delta_{c,t+1} = x_{c,t+1} - x_{c,t}$ with the observed weather
 $\mathbf{w}_{c,t+1}$, i.e. as a model of the epidemic conditional on the weather.
 
 Models are scored by their skill relative to persistence ($\hat\Delta = 0$),
 
-$$
+```math
 S = 1 - \frac{\sum_i \big(\Delta_i - \hat\Delta_i\big)^2}{\sum_i \Delta_i^2},
-$$
+```
 
 and the hyperparameters $\theta$ maximise the skill of the out-of-fold predictions of $K$
 backtesting folds, each trained on all years before its validation window $V_k$:
 
-$$
+```math
 \hat\theta = \arg\max_\theta \left[ 1 - \frac{\sum_{k=1}^{K} \sum_{i \in V_k} \big(\Delta_i - \hat\Delta_i^{(k,\theta)}\big)^2}{\sum_{k=1}^{K} \sum_{i \in V_k} \Delta_i^2} \right]
-$$
+```
 
 ## Climate model
 
 Future weather is drawn from a weekly climatology. For city $c$ and week of the year $s$, the
-mean vector and covariance matrix pool the development years' weather within $h = 2$ weeks of $s$
-(circularly across the turn of the year):
+weather of the development years within $h = 2$ weeks of $s$ is pooled, with the distance between
+weeks measured circularly across the turn of the year:
 
-$$
-\mathcal{W}_{c,s} = \lbrace \mathbf{w}_{c,t} : d(s_t, s) \le h \rbrace, \qquad
-\boldsymbol{\mu}_{c,s} = \overline{\mathcal{W}_{c,s}}, \qquad
-\boldsymbol{\Sigma}_{c,s} = \operatorname{Cov}\big(\mathcal{W}_{c,s}\big)
-$$
+```math
+\mathcal{W}_{c,s} = \lbrace \mathbf{w}_{c,t} : d(s_t, s) \le h \rbrace, \qquad d(a, b) = \min\big(|a - b|,\ 53 - |a - b|\big)
+```
 
-$$
-\mathbf{w}_{c,t} \sim \mathcal{N}\big(\boldsymbol{\mu}_{c,s_t},\ \boldsymbol{\Sigma}_{c,s_t}\big)
-$$
+Mean vector and covariance matrix of the pooled weather define a multivariate normal distribution
+from which the weather of a future week is drawn:
+
+```math
+\mu_{c,s} = \frac{1}{|\mathcal{W}_{c,s}|} \sum_{\mathbf{w} \in \mathcal{W}_{c,s}} \mathbf{w}, \qquad
+\Sigma_{c,s} = \frac{1}{|\mathcal{W}_{c,s}| - 1} \sum_{\mathbf{w} \in \mathcal{W}_{c,s}} \big(\mathbf{w} - \mu_{c,s}\big)\big(\mathbf{w} - \mu_{c,s}\big)^\top
+```
+
+```math
+\mathbf{w}_{c,t} \sim \mathcal{N}\big(\mu_{c,s_t},\ \Sigma_{c,s_t}\big)
+```
 
 ## Error model
 
@@ -113,10 +128,10 @@ persistent error in large epidemics. Both are captured by a small state-space mo
 log incidence $y_t$ is the true log incidence $x_t$ plus counting noise, and the true log incidence
 follows the model up to an autoregressive process error,
 
-$$
+```math
 y_t = x_t + \nu_t, \quad \nu_t \sim \mathcal{N}\big(0,\ \tau^2 / n_t\big), \qquad
 \varepsilon_{t+1} = \eta_{t+1} = \phi\, \eta_t + \xi_{t+1}, \quad \xi_{t+1} \sim \mathcal{N}\big(0,\ \sigma_\eta^2 (1 - \phi^2)\big),
-$$
+```
 
 where $n_t$ is the number of weekly cases. $\sigma_\eta$, $\phi$ and $\tau^2$ are estimated from the
 residuals by the method of moments.
@@ -126,15 +141,15 @@ residuals by the method of moments.
 From the last observed week $t_0$, each of the $N$ samples $i$ draws an initial state and is
 propagated $H$ weeks ahead, feeding every prediction back as the next state:
 
-$$
+```math
 x^{(i)}_{t_0} = y^\text{obs}_{t_0} + \delta^{(i)} - \nu^{(i)}_{t_0}, \qquad
 \delta^{(i)} \sim \mathcal{N}\big(0, \sigma_0^2\big), \qquad
 \eta^{(i)}_{t_0} \sim \mathcal{N}\big(0, \sigma_\eta^2\big)
-$$
+```
 
 ```math
 \begin{aligned}
-\mathbf{w}^{(i)}_{t+1} &\sim \mathcal{N}\big(\boldsymbol{\mu}_{c,s_{t+1}},\ \boldsymbol{\Sigma}_{c,s_{t+1}}\big) \\
+\mathbf{w}^{(i)}_{t+1} &\sim \mathcal{N}\big(\mu_{c,s_{t+1}},\ \Sigma_{c,s_{t+1}}\big) \\
 \eta^{(i)}_{t+1} &= \phi\, \eta^{(i)}_t + \xi^{(i)}_{t+1} \\
 x^{(i)}_{t+1} &= x^{(i)}_t + \hat f\big(s_t,\ c,\ x^{(i)}_t, \dots, \mathbf{w}^{(i)}_{t+1}, \mathbf{w}^{(i)}_t, \dots\big) + \eta^{(i)}_{t+1} \\
 y^{(i)}_{t+1} &= x^{(i)}_{t+1} + \nu^{(i)}_{t+1}
@@ -166,12 +181,20 @@ tests/               unit tests on synthetic data
 
 ## Getting started
 
-Python 3.12. Install the pinned dependencies and the project:
+Requires Python 3.12 or newer. The project and its dependencies (numpy, pandas, pyarrow,
+scikit-learn, XGBoost, Optuna, plotly, MLflow, matplotlib) install from
+[`pyproject.toml`](pyproject.toml):
 
 ```bash
-pip install -r requirements.txt
-pip install -e ".[dev]"
+git clone https://github.com/giomoretto/dengue_epidemic_prediction.git
+cd dengue_epidemic_prediction
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"            # project, dependencies and pytest
 ```
+
+Add the `notebook` extra (`pip install -e ".[dev,notebook]"`) for the exploratory notebook. To
+reproduce the exact tested versions, run `pip install -r requirements.txt` before the last step.
 
 The data are not part of the repository. Place the InfoDengue weekly records of the four cities
 in `data/raw/infodengue_capitals_subsetBR.csv`, with a `city_name` column added

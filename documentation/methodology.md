@@ -209,8 +209,8 @@ $$
 $$
 
 $$
-\boldsymbol{\mu}_{c,s} = \frac{1}{|\mathcal{W}_{c,s}|} \sum_{\mathbf{w} \in \mathcal{W}_{c,s}} \mathbf{w}, \qquad
-\boldsymbol{\Sigma}_{c,s} = \frac{1}{|\mathcal{W}_{c,s}| - 1} \sum_{\mathbf{w} \in \mathcal{W}_{c,s}} \big(\mathbf{w} - \boldsymbol{\mu}_{c,s}\big)\big(\mathbf{w} - \boldsymbol{\mu}_{c,s}\big)^\top
+\mu_{c,s} = \frac{1}{|\mathcal{W}_{c,s}|} \sum_{\mathbf{w} \in \mathcal{W}_{c,s}} \mathbf{w}, \qquad
+\Sigma_{c,s} = \frac{1}{|\mathcal{W}_{c,s}| - 1} \sum_{\mathbf{w} \in \mathcal{W}_{c,s}} \big(\mathbf{w} - \mu_{c,s}\big)\big(\mathbf{w} - \mu_{c,s}\big)^\top
 $$
 
 Pooling is necessary because a single week has only one observation per year, too few to estimate
@@ -218,7 +218,7 @@ a $6 \times 6$ covariance matrix. Weather is drawn from a multivariate normal di
 keeps the correlations between the six variables:
 
 $$
-\mathbf{w}^{(i)}_{c,t+1} \sim \mathcal{N}\big(\boldsymbol{\mu}_{c,s_{t+1}},\ \boldsymbol{\Sigma}_{c,s_{t+1}}\big)
+\mathbf{w}^{(i)}_{c,t+1} \sim \mathcal{N}\big(\mu_{c,s_{t+1}},\ \Sigma_{c,s_{t+1}}\big)
 $$
 
 ### 4.2 Model error
