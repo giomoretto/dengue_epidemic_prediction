@@ -1,3 +1,5 @@
+from functools import partial
+
 import mlflow
 import optuna
 import pandas as pd
@@ -5,6 +7,10 @@ from sklearn.ensemble import RandomForestRegressor
 
 from model_synthesis.backtesting import BacktestSplits
 from model_synthesis.optuna_training import train_with_optuna
+
+# MLflow saves scikit-learn models with skops, which only loads types declared trusted. The tree
+# structure of the forest is trusted here because the pipeline only loads models it trained itself.
+SKOPS_TRUSTED_TYPES = ["sklearn.tree._tree.Tree"]
 
 
 def _suggest_params(trial: optuna.Trial) -> dict:
@@ -49,7 +55,7 @@ def train_random_forest_with_optuna(
         experiment_name="dengue_random_forest_optuna",
         make_model=lambda params: RandomForestRegressor(**params, random_state=random_state, n_jobs=-1),
         suggest_params=_suggest_params,
-        log_model=mlflow.sklearn.log_model,
+        log_model=partial(mlflow.sklearn.log_model, skops_trusted_types=SKOPS_TRUSTED_TYPES),
         model_artifact_name="random_forest_model_optimized",
         df_features=df_features,
         dataset_name=dataset_name,
